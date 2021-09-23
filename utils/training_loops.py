@@ -6,6 +6,8 @@ from sklearn.metrics import accuracy_score, confusion_matrix
 
 def training_loop(model, device, train_loader, optimizer, loss_function, epoch, num_epochs):
 
+    train_loss = []
+
     model.train()
 
     n_total_steps = len(train_loader)
@@ -30,6 +32,10 @@ def training_loop(model, device, train_loader, optimizer, loss_function, epoch, 
 
             if batch_idx % 2 == 0:
                 print(f'Epoch [{epoch+1}/{num_epochs}], Step [{batch_idx+1}/{n_total_steps}], Loss: {loss.item():.4f}')
+
+            train_loss.append(loss.item())
+        
+    return train_loss
 
 
 def val_loop(model, device, val_loader, loss_function):
@@ -69,6 +75,6 @@ def val_loop(model, device, val_loader, loss_function):
 
     sensitivity = conf_mat.diagonal()/conf_mat.sum(axis=1)
 
-    print("Test Accuracy: ", accuracy, "Test Sensitivity (Overall): ", np.mean(sensitivity), "Test loss: ", np.mean(loss))
+    print("Val Accuracy: ", accuracy, "Val Sensitivity (Overall): ", np.mean(sensitivity), "Val loss: ", np.mean(loss))
 
-    return targets, predictions, accuracy
+    return targets, predictions, accuracy, np.mean(loss)

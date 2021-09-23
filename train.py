@@ -89,16 +89,16 @@ def train(fold, training_data_path, gt, device, epochs, train_bs, val_bs, outdir
         mode="max"
     )
 
-    #train_loss_all = []
-    #accuracy_list = []
-    #val_loss_list = []
+    train_loss_all = []
+    accuracy_list = []
+    val_loss_list = []
     prev_accuracy = 0
     # Start training
     for epoch in range(epochs):
 
-        training_loop(model, device, train_loader, optimizer, loss_function, epoch, epochs)
+        train_loss = training_loop(model, device, train_loader, optimizer, loss_function, epoch, epochs)
 
-        targets, predictions, accuracy = val_loop(model, device, val_loader, loss_function)
+        targets, predictions, accuracy, val_loss = val_loop(model, device, val_loader, loss_function)
 
         assert np.array_equal(targets, val_targets), "targets from val_loop are not equal to val_targets (source of the validation data)"
 
@@ -116,9 +116,9 @@ def train(fold, training_data_path, gt, device, epochs, train_bs, val_bs, outdir
 
         prev_accuracy = accuracy
 
-        #train_loss_all.append(train_loss)
-        #val_loss_list.append(val_loss)
-        #accuracy_list.append(accuracy)
+        train_loss_all.append(train_loss)
+        val_loss_list.append(val_loss)
+        accuracy_list.append(accuracy)
 
 
     # Make a function for the following lines
@@ -150,7 +150,7 @@ if __name__ == "__main__" :
 
     parser.add_argument("--fold", type=int, help="which fold is the val fold")
     parser.add_argument("--device", type=str, default="cuda")
-    parser.add_argument("--epochs", type=int, default=100, help="number of epochs")
+    parser.add_argument("--epochs", type=int, default=50, help="number of epochs")
     parser.add_argument("--train_batch", type=int, default=64, help="batch size for training")
     parser.add_argument("--val_batch", type=int, default=64, help="batch size for validation")
     parser.add_argument("--lr", type=int, default=1e-4)
