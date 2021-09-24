@@ -10,6 +10,7 @@ import numpy as np
 from sklearn.metrics import roc_auc_score
 import json
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 from efficientnet_pytorch import EfficientNet
 from utils.data import ClassificationDataset
@@ -141,6 +142,13 @@ def train(fold, training_data_path, gt, device, epochs, train_bs, val_bs, outdir
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy")
     accuracy_loss_plot.savefig(os.path.join(opt.outdir, f'accuracy_fold{opt.fold}.png'))
+
+    print("plots saved..")
+
+    end_time = datetime.now()
+
+    end_time = end_time.strftime("%H:%M:%S")
+    print("Start Time = ", starting_time, "End Time = ", end_time)
         
 
 
@@ -169,4 +177,9 @@ if __name__ == "__main__" :
     with open(os.path.join(opt.outdir, f'training_options{opt.fold}.txt'), 'a') as f:
         json.dump(json_object, f)
     
+    starting_time = datetime.now()
+
+    starting_time = starting_time.strftime("%H:%M:%S")
+    print("Starting Time =", starting_time)
+
     train(opt.fold, opt.dataset, opt.gt, opt.device, opt.epochs, opt.train_batch, opt.val_batch, opt.outdir, opt.lr)
