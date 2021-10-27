@@ -8,7 +8,7 @@ import argparse
 
 from efficientnet_pytorch import EfficientNet
 from utils.data import ClassificationDataset
-from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
+from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_auc_score
 
 
 def load_data(test_data_path, gt):
@@ -54,8 +54,13 @@ def predict(model, device, test_loader, ensemble):
         return targets, predictions
     
     accuracy = accuracy_score(targets, predictions)
+    auc = roc_auc_score(targets, predictions)
 
-    return classification_report(targets, predictions), accuracy
+    print(predictions)
+    print()
+    print()
+
+    return classification_report(targets, predictions), accuracy, auc
 
 
 def calc_ensemble_prediction(collected_predictions):
@@ -96,20 +101,18 @@ if __name__ == "__main__" :
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--dataset", type=str, help="path to the folder containing the images")
+    parser.add_argument("--dataset", type=str, help="path to the folder containing the images size: 260x260")
     parser.add_argument("--gt", type=str, help="path to the file that contains the gt csv file - see examples under /examples (needs to be added)")
+    parser.add_argument("--single_model_path", default=None, type=str, help="Use only for single model prediction: path to the folder containing the model file: .bin")
+    parser.add_argument("--ensemble", type=bool, default=False, help="set to True for ensemble prediction")
+    parser.add_argument("--Model0", type=str, default=None, help="Use only for ensemble model prediction: path to the folder containing the 1st model file for ensemble: .bin")
+    parser.add_argument("--Model1", type=str, default=None, help="Use only for ensemble model prediction: path to the folder containing the 2nd model file for ensemble: .bin")
+    parser.add_argument("--Model2", type=str, default=None, help="Use only for ensemble model prediction: path to the folder containing the 3rd model file for ensemble: .bin")
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--val_bs", type=int, default=16)
-    parser.add_argument("--single_model_path", default=None, type=str, help="path to the folder containing the model file: .bin")
-    parser.add_argument("--ensemble", type=bool, default=False, help="set to True for ensemble prediction")
-    parser.add_argument("--Model0", type=str, default=None, help="path to the folder containing the 1st model file for ensemble: .bin")
-    parser.add_argument("--Model1", type=str, default=None, help="path to the folder containing the 2nd model file for ensemble: .bin")
-    parser.add_argument("--Model2", type=str, default=None, help="path to the folder containing the 3rd model file for ensemble: .bin")
 
 
     opt = parser.parse_args()
-
-    print(opt.ensemble)
     
     test_images, test_targets = load_data(opt.dataset, opt.gt)
 
@@ -157,8 +160,12 @@ if __name__ == "__main__" :
 
         accuracy = accuracy_score(targets, ensemble_pred)
 
+        auc = roc_auc_score(targets, ensemble_pred)
+
         print("Ensemble results: ")
-        print(classification_report(targets, ensemble_pred), accuracy)
+        print(classification_report(targets, ensemble_pred))
+        print("Accuracy: ", accuracy)
+        print("AUC: ", auc)
 
 
     elif opt.single_model_path is not None:
@@ -167,9 +174,11 @@ if __name__ == "__main__" :
         model.load_state_dict(torch.load(opt.single_model_path))
         model.to(opt.device)
 
-        report, accuracy = predict(model, opt.device, test_loader, ensemble=False)
+        report, accuracy, auc = predict(model, opt.device, test_loader, ensemble=False)
 
-        print("Single Model results: ", report, "Accuracy: ", accuracy)
+        print("Single Model results: ", report)
+        print("Accuracy: ", accuracy)
+        print("AUC: ", auc)
 
     else:
         print("No model path specified - read opt.arguments")
