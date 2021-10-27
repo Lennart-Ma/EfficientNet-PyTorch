@@ -156,12 +156,13 @@ if __name__ == "__main__" :
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--fold", type=int, help="which fold is the val fold")
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--epochs", type=int, default=50, help="number of epochs")
     parser.add_argument("--train_batch", type=int, default=64, help="batch size for training")
     parser.add_argument("--val_batch", type=int, default=64, help="batch size for validation")
     parser.add_argument("--lr", type=int, default=1e-4)
+    # Needed inputs:
+    parser.add_argument("--fold", type=int, help="which fold is the val fold")
     parser.add_argument("--dataset", type=str, help="path to the folder containing the images")
     parser.add_argument("--gt", type=str, help="path to the file that contains the gt csv file - see examples under /examples (needs to be added)")
     parser.add_argument("--outdir", type=str, help="outputdir where the files are stored")
