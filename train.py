@@ -94,7 +94,6 @@ def train(mean, std, fold, training_data_path, gt, device, epochs, train_bs, val
     train_loss_all = []
     accuracy_list = []
     val_loss_list = []
-    prev_accuracy = 0
     # Start training
     for epoch in range(epochs):
 
@@ -112,11 +111,9 @@ def train(mean, std, fold, training_data_path, gt, device, epochs, train_bs, val
     
         scheduler.step(auc)
     
-        if accuracy > prev_accuracy:
+        if all(accuracy > i for i in accuracy_list):
             torch.save(model.state_dict(), os.path.join(outdir, f"model_fold_{fold}.bin"))
             print("Better model saved to outdir")
-
-        prev_accuracy = accuracy
 
         train_loss_all.append(train_loss)
         val_loss_list.append(val_loss)
@@ -158,10 +155,10 @@ if __name__ == "__main__" :
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--device", type=str, default="cuda")
-    parser.add_argument("--epochs", type=int, default=65, help="number of epochs")
+    parser.add_argument("--epochs", type=int, default=80, help="number of epochs")
     parser.add_argument("--train_batch", type=int, default=64, help="batch size for training")
     parser.add_argument("--val_batch", type=int, default=64, help="batch size for validation")
-    parser.add_argument("--lr", type=int, default=0.5e-3)
+    parser.add_argument("--lr", type=int, default=1e-3)
     # Needed inputs:
     parser.add_argument("--fold", type=int, help="which fold is the val fold")
     parser.add_argument("--dataset", type=str, help="path to the folder containing the images")
