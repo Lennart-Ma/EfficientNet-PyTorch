@@ -16,12 +16,13 @@ from efficientnet_pytorch import EfficientNet
 from utils.data import ClassificationDataset
 from utils.training_loops import training_loop
 from utils.training_loops import val_loop
+from utils.calc_mean_std import get_mean_std
 
-def train(fold, training_data_path, gt, device, epochs, train_bs, val_bs, outdir, lr):
+def train(mean, std, fold, training_data_path, gt, device, epochs, train_bs, val_bs, outdir, lr):
 
     df = pd.read_csv(gt)
-    mean = 0.1685
-    std = 0.1796
+    mean = mean
+    std = std
 
     df_train = df[df.kfold != fold].reset_index(drop=True)
     df_val = df[df.kfold == fold].reset_index(drop=True)
@@ -157,10 +158,10 @@ if __name__ == "__main__" :
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--device", type=str, default="cuda")
-    parser.add_argument("--epochs", type=int, default=50, help="number of epochs")
+    parser.add_argument("--epochs", type=int, default=65, help="number of epochs")
     parser.add_argument("--train_batch", type=int, default=64, help="batch size for training")
     parser.add_argument("--val_batch", type=int, default=64, help="batch size for validation")
-    parser.add_argument("--lr", type=int, default=1e-4)
+    parser.add_argument("--lr", type=int, default=0.5e-3)
     # Needed inputs:
     parser.add_argument("--fold", type=int, help="which fold is the val fold")
     parser.add_argument("--dataset", type=str, help="path to the folder containing the images")
@@ -183,4 +184,6 @@ if __name__ == "__main__" :
     starting_time = starting_time.strftime("%H:%M:%S")
     print("Starting Time =", starting_time)
 
-    train(opt.fold, opt.dataset, opt.gt, opt.device, opt.epochs, opt.train_batch, opt.val_batch, opt.outdir, opt.lr)
+    mean, std = get_mean_std(opt.dataset)
+
+    train(mean, std, opt.fold, opt.dataset, opt.gt, opt.device, opt.epochs, opt.train_batch, opt.val_batch, opt.outdir, opt.lr)
