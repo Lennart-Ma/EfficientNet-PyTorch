@@ -21,21 +21,21 @@ def get_mean_std(path, img_type=None):
 
     for i, image in enumerate(glob.glob(f"{path}/*")):
 
-        image = Image.open(image).convert('L')
+        with Image.open(image).convert('L') as image:
         
-        if img_type == "uint8":
-            data = np.asarray(image)
-            print("inside")
-        else:
-            data = np.asarray(image)
-            data = img_as_float(data)
+            if img_type == "uint8":
+                data = np.asarray(image)
+                print("inside")
+            else:
+                data = np.asarray(image)
+                data = img_as_float(data)
 
-        mean = np.mean(data)
-        std = np.std(data)
+            mean = np.mean(data)
+            std = np.std(data)
 
-        mean_sum += mean
-        std_sum += std
-        n_imgs = i+1
+            mean_sum += mean
+            std_sum += std
+            n_imgs = i+1
 
     mean = mean_sum/(n_imgs)
     std = std_sum/(n_imgs)
