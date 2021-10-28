@@ -111,13 +111,22 @@ if __name__ == "__main__" :
     parser.add_argument("--Model2", type=str, default=None, help="Use only for ensemble model prediction: path to the folder containing the 3rd model file for ensemble: .bin")
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--val_bs", type=int, default=16)
+    parser.add_argument("--mean", type=float, default=None)
+    parser.add_argument("--std", type=float, default=None)
 
 
     opt = parser.parse_args()
     
     test_images, test_targets = load_data(opt.dataset, opt.gt)
 
-    mean, std = get_mean_std(opt.dataset)
+    if opt.mean is None and opt.std is None:
+        print("Mean and std get calculated.. This may take 5 mins")
+        mean, std = get_mean_std(opt.dataset)
+    else:
+        print("Mean and std are taken from the input - If you want to let it be calculated leave the args mean and std as None")
+        mean = opt.mean
+        std = opt.std
+        print("mean: ", mean, "std: ", std)
 
     test_aug = albumentations.Compose(
             [
