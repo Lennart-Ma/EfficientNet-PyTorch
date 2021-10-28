@@ -9,6 +9,7 @@ import argparse
 from efficientnet_pytorch import EfficientNet
 from utils.data import ClassificationDataset
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_auc_score
+from utils.calc_mean_std import get_mean_std
 
 
 def load_data(test_data_path, gt):
@@ -116,8 +117,7 @@ if __name__ == "__main__" :
     
     test_images, test_targets = load_data(opt.dataset, opt.gt)
 
-    mean = 0.1685
-    std = 0.1796
+    mean, std = get_mean_std(opt.dataset)
 
     test_aug = albumentations.Compose(
             [
