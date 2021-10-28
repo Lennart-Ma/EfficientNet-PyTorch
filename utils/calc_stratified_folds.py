@@ -42,17 +42,18 @@ def create_stratified_gt(old_gt_path, new_gt_path, folds):
 
     gt.to_csv(new_gt_path, index=False)
 
-    
-
-
 
 if __name__ == "__main__":
 
-    path = r"G:\My Drive\Projektarbeit_ResearchProject\datasets\IVUS\IVUS_resized\train_val\260\50"
 
-    gt_path = os.path.join(path, "train.csv")
+    ## Part which have to be changed
+    path = r"G:\My Drive\Projektarbeit_ResearchProject\datasets\IVUS\IVUS_resized\fakes\260\10"
 
-    gt_strat_path = os.path.join(path, "train_stratified.csv")
+
+    ## Change this if you rebuild fakes csv files
+    gt_path = os.path.join(path, "train_merged.csv")
+
+    gt_strat_path = os.path.join(path, "train_merged_stratified.csv")
 
     export_hist(path, gt_path, "hist_fold_distr_no_strat")
 
