@@ -46,15 +46,16 @@ def create_stratified_gt(old_gt_path, new_gt_path, folds):
 if __name__ == "__main__":
 
 
-    ## Part which have to be changed
-    path = r"G:\My Drive\Projektarbeit_ResearchProject\datasets\IVUS\IVUS_resized\fakes\260\10"
-
-
-    ## Change this if you rebuild fakes csv files
+    # Part which have to be changed
+    ## Directory of the ground truth csv file
+    path = r"G:\My Drive\Projektarbeit_ResearchProject\datasets\IVUS\IVUS_resized\fakes\260\2"
+    ## Change this to train_merged.csv if you rebuild csv files inside the /fakes dir instead of csv file in /train_val dir (train.csv)
     gt_path = os.path.join(path, "train_merged.csv")
-
+    ## Change this to train_merged_stratified.csv if you rebuild csv files inside the /fakes dir instead of csv file in /train_val dir (train_stratified.csv)
     gt_strat_path = os.path.join(path, "train_merged_stratified.csv")
 
+
+    # Part which should not be changed
     export_hist(path, gt_path, "hist_fold_distr_no_strat")
 
     create_stratified_gt(gt_path, gt_strat_path, 3)
