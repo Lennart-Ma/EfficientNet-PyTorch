@@ -189,11 +189,12 @@ if __name__ == "__main__" :
         perc_data = opt.perc_data
         fake = opt.fake
 
+        # In this section the csv file gets either created and newly written or opened and appended if a csv file already exists
         for file in glob.glob(os.path.join(opt.output_path, '*.{}'.format("csv"))):
             file_exist = True
             with open(file, 'a', newline='') as csvfile:
                 writer = csv.writer(csvfile, delimiter=' ',
-                                quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                                quotechar=' ', quoting=csv.QUOTE_MINIMAL)
                 writer.writerow(["Ensemble results: "])
                 writer.writerow(["label 1"])
                 writer.writerow([classification_report_ensemble[list(classification_report_ensemble.keys())[0]]])
@@ -206,7 +207,7 @@ if __name__ == "__main__" :
         if not file_exist:
             with open(os.path.join(opt.output_path, f"Prediction_results_on_test_data_IVUS{perc_data}+{fake}.csv"), 'a', newline='') as csvfile:
                 writer = csv.writer(csvfile, delimiter=' ',
-                                quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                                quotechar=' ', quoting=csv.QUOTE_MINIMAL)
                 writer.writerow([f"PREDICTION RESULTS ON TEST DATA WITH EfficientNetb2 model trained on IVUS data {perc_data}+{fake}"])
                 writer.writerow([""])
                 writer.writerow(["Ensemble results: "])
@@ -234,11 +235,12 @@ if __name__ == "__main__" :
         perc_data = opt.perc_data
         fake = opt.fake
 
+        # In this section the csv file gets either created and newly written or opened and appended if a csv file already exists
         for file in glob.glob(os.path.join(opt.output_path, '*.{}'.format("csv"))):
             file_exist = True
             with open(file, 'a', newline='') as csvfile:
                 writer = csv.writer(csvfile, delimiter=' ',
-                                quotechar='', quoting=csv.QUOTE_MINIMAL)
+                                quotechar=' ', quoting=csv.QUOTE_MINIMAL)
                 writer.writerow(["Results for : ", os.path.basename(opt.single_model_path)])
                 writer.writerow(["label 1"])
                 writer.writerow([single_report[list(single_report.keys())[0]]])
@@ -251,7 +253,7 @@ if __name__ == "__main__" :
         if not file_exist:
             with open(os.path.join(opt.output_path, f"Prediction_results_on_test_data_IVUS{perc_data}+{fake}.csv"), 'a', newline='') as csvfile:
                 writer = csv.writer(csvfile, delimiter=' ',
-                                quotechar='', quoting=csv.QUOTE_MINIMAL)
+                                quotechar=' ', quoting=csv.QUOTE_MINIMAL)
                 writer.writerow([f"PREDICTION RESULTS ON TEST DATA WITH EfficientNetb2 model trained on IVUS data {perc_data}+{fake}"])
                 writer.writerow([""])
                 writer.writerow(["Results for : ", os.path.basename(opt.single_model_path)])
