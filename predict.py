@@ -97,6 +97,35 @@ def calc_ensemble_prediction(collected_predictions):
 
     return np.array(ensembled_predictions_one_hot)
 
+def write_results_to_csv(file_path, file_exist, results_for, report, accuracy, auc, perc_data, fake):
+           
+    for file in glob.glob(os.path.join(file_path, '*.{}'.format("csv"))):
+        file_exist = True
+        with open(file, 'a', newline='') as csvfile:
+            writer = csv.writer(csvfile, delimiter=' ',
+                    quotechar=' ', quoting=csv.QUOTE_MINIMAL)
+            write_csv_results_content(writer, results_for, report, accuracy, auc)
+    
+    if not file_exist:
+        with open(os.path.join(file_path, f"Prediction_results_on_test_data_IVUS{perc_data}+{fake}.csv"), 'a', newline='') as csvfile:
+            writer = csv.writer(csvfile, delimiter=' ',
+                            quotechar=' ', quoting=csv.QUOTE_MINIMAL)
+            writer.writerow([f"PREDICTION RESULTS ON TEST DATA WITH EfficientNetb2 model trained on IVUS data {perc_data}+{fake}"])
+            
+            write_csv_results_content(writer, results_for, report, accuracy, auc)
+
+def write_csv_results_content(writer, results_for, report, accuracy, auc):
+
+    writer.writerow([""])
+    writer.writerow(["Results for : ", results_for])
+    writer.writerow(["label 1"])
+    writer.writerow([report[list(report.keys())[0]]])
+    writer.writerow(["label 2"])
+    writer.writerow([report[list(report.keys())[1]]])
+    writer.writerow(["Accuracy: ", accuracy])
+    writer.writerow(["AUC: ", auc])
+    writer.writerow([""])
+
     
 
 
@@ -185,39 +214,9 @@ if __name__ == "__main__" :
         print("Accuracy: ", accuracy)
         print("AUC: ", auc)
 
-        file_exist=False
-        perc_data = opt.perc_data
-        fake = opt.fake
-
         # In this section the csv file gets either created and newly written or opened and appended if a csv file already exists
-        for file in glob.glob(os.path.join(opt.output_path, '*.{}'.format("csv"))):
-            file_exist = True
-            with open(file, 'a', newline='') as csvfile:
-                writer = csv.writer(csvfile, delimiter=' ',
-                                quotechar=' ', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(["Ensemble results: "])
-                writer.writerow(["label 1"])
-                writer.writerow([classification_report_ensemble[list(classification_report_ensemble.keys())[0]]])
-                writer.writerow(["label 2"])
-                writer.writerow([classification_report_ensemble[list(classification_report_ensemble.keys())[1]]])
-                writer.writerow(["Accuracy: ", accuracy])
-                writer.writerow(["AUC: ", auc])
-                writer.writerow([""])
-        
-        if not file_exist:
-            with open(os.path.join(opt.output_path, f"Prediction_results_on_test_data_IVUS{perc_data}+{fake}.csv"), 'a', newline='') as csvfile:
-                writer = csv.writer(csvfile, delimiter=' ',
-                                quotechar=' ', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow([f"PREDICTION RESULTS ON TEST DATA WITH EfficientNetb2 model trained on IVUS data {perc_data}+{fake}"])
-                writer.writerow([""])
-                writer.writerow(["Ensemble results: "])
-                writer.writerow(["label 1"])
-                writer.writerow([classification_report_ensemble[list(classification_report_ensemble.keys())[0]]])
-                writer.writerow(["label 2"])
-                writer.writerow([classification_report_ensemble[list(classification_report_ensemble.keys())[1]]])
-                writer.writerow(["Accuracy: ", accuracy])
-                writer.writerow(["AUC: ", auc])
-                writer.writerow([""])
+        write_results_to_csv(file_path=opt.output_path, file_exist=False, results_for="Ensemble", \
+            report=classification_report_ensemble, accuracy=accuracy, auc=auc, perc_data=opt.perc_data, fake=opt.fake)
 
     elif opt.single_model_path is not None:
         
@@ -231,39 +230,9 @@ if __name__ == "__main__" :
         print("Accuracy: ", accuracy)
         print("AUC: ", auc)
 
-        file_exist=False
-        perc_data = opt.perc_data
-        fake = opt.fake
-
         # In this section the csv file gets either created and newly written or opened and appended if a csv file already exists
-        for file in glob.glob(os.path.join(opt.output_path, '*.{}'.format("csv"))):
-            file_exist = True
-            with open(file, 'a', newline='') as csvfile:
-                writer = csv.writer(csvfile, delimiter=' ',
-                                quotechar=' ', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(["Results for : ", os.path.basename(opt.single_model_path)])
-                writer.writerow(["label 1"])
-                writer.writerow([single_report[list(single_report.keys())[0]]])
-                writer.writerow(["label 2"])
-                writer.writerow([single_report[list(single_report.keys())[1]]])
-                writer.writerow(["Accuracy: ", accuracy])
-                writer.writerow(["AUC: ", auc])
-                writer.writerow([""])
-        
-        if not file_exist:
-            with open(os.path.join(opt.output_path, f"Prediction_results_on_test_data_IVUS{perc_data}+{fake}.csv"), 'a', newline='') as csvfile:
-                writer = csv.writer(csvfile, delimiter=' ',
-                                quotechar=' ', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow([f"PREDICTION RESULTS ON TEST DATA WITH EfficientNetb2 model trained on IVUS data {perc_data}+{fake}"])
-                writer.writerow([""])
-                writer.writerow(["Results for : ", os.path.basename(opt.single_model_path)])
-                writer.writerow(["label 1"])
-                writer.writerow([single_report[list(single_report.keys())[0]]])
-                writer.writerow(["label 2"])
-                writer.writerow([single_report[list(single_report.keys())[1]]])
-                writer.writerow(["Accuracy: ", accuracy])
-                writer.writerow(["AUC: ", auc])
-                writer.writerow([""])
+        write_results_to_csv(file_path=opt.output_path, file_exist=False, results_for=os.path.basename(opt.single_model_path), \
+            report=single_report, accuracy=accuracy, auc=auc, perc_data=opt.perc_data, fake=opt.fake)
 
     else:
         print("No model path specified - read opt.arguments")
