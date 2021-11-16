@@ -18,7 +18,7 @@ from utils.training_loops import training_loop
 from utils.training_loops import val_loop
 from utils.calc_mean_std import get_mean_std
 
-def train(mean, std, fold, training_data_path, gt, device, epochs, train_bs, val_bs, outdir, lr):
+def train(mean, std, fold, training_data_path, gt, device, epochs, train_bs, val_bs, outdir, lr, pretrained_on_ImageNet, pretrained_own=None):
 
     df = pd.read_csv(gt)
     mean = mean
@@ -27,7 +27,30 @@ def train(mean, std, fold, training_data_path, gt, device, epochs, train_bs, val
     df_train = df[df.kfold != fold].reset_index(drop=True)
     df_val = df[df.kfold == fold].reset_index(drop=True)
 
-    model = EfficientNet.from_pretrained("efficientnet-b2", in_channels = 1, num_classes = 1)
+    print()
+    print("use_pretrained: ", pretrained_on_ImageNet)
+    print()
+
+    if pretrained_on_ImageNet:
+        print("Using on ImageNet pretrained model")
+        model = EfficientNet.from_pretrained("efficientnet-b2", in_channels = 1, num_classes = 1)
+    
+    elif pretrained_own is not None:
+        model = EfficientNet.from_name('efficientnet-b2', in_channels = 1, num_classes = 1)
+        checkpoint = torch.load(pretrained_own)
+        print()
+        print("Inside pretrained_own")
+        print()
+        print(len(checkpoint.keys()))
+        print()
+        # print(checkpoint)
+        # print()
+        model.load_state_dict(checkpoint)
+    
+    else:
+        print("Using NOT pretrained model")
+        model = EfficientNet.from_name('efficientnet-b2', in_channels = 1, num_classes = 1)
+    
     model.to(device)
 
     # Set up the train_loader and val_loader
@@ -160,6 +183,8 @@ if __name__ == "__main__" :
     parser.add_argument("--val_batch", type=int, default=64, help="batch size for validation")
     parser.add_argument("--lr", type=int, default=1e-3)
     # Needed inputs:
+    parser.add_argument("--pretrained_on_ImageNet", default=False, action='store_true', help="Use a pretrained model")
+    parser.add_argument("--pretrained_own", type=str, help="path to a pretrained model (.bin)")
     parser.add_argument("--fold", type=int, help="which fold is the val fold")
     parser.add_argument("--dataset", type=str, help="path to the folder containing the images")
     parser.add_argument("--gt", type=str, help="path to the file that contains the gt csv file - see examples under /examples (needs to be added)")
@@ -183,4 +208,4 @@ if __name__ == "__main__" :
 
     mean, std = get_mean_std(opt.dataset)
 
-    train(mean, std, opt.fold, opt.dataset, opt.gt, opt.device, opt.epochs, opt.train_batch, opt.val_batch, opt.outdir, opt.lr)
+    train(mean, std, opt.fold, opt.dataset, opt.gt, opt.device, opt.epochs, opt.train_batch, opt.val_batch, opt.outdir, opt.lr, opt.pretrained_on_ImageNet, opt.pretrained_own)
