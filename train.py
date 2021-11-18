@@ -7,7 +7,6 @@ import albumentations
 import argparse
 import pandas as pd
 import numpy as np
-from sklearn.metrics import roc_auc_score
 import json
 import matplotlib.pyplot as plt
 from datetime import datetime
@@ -18,7 +17,7 @@ from utils.training_loops import training_loop
 from utils.training_loops import val_loop
 from utils.calc_mean_std import get_mean_std
 
-def train(mean, std, fold, training_data_path, gt, device, epochs, train_bs, val_bs, outdir, lr, pretrained_on_ImageNet, pretrained_own=None):
+def train(mean, std, fold, training_data_path, gt, num_classes, metric, device, epochs, train_bs, val_bs, outdir, lr, pretrained_on_ImageNet, pretrained_own=None):
 
     df = pd.read_csv(gt)
     mean = mean
@@ -33,10 +32,10 @@ def train(mean, std, fold, training_data_path, gt, device, epochs, train_bs, val
 
     if pretrained_on_ImageNet:
         print("Using on ImageNet pretrained model")
-        model = EfficientNet.from_pretrained("efficientnet-b2", in_channels = 1, num_classes = 1)
+        model = EfficientNet.from_pretrained("efficientnet-b2", in_channels = 1, num_classes = num_classes)
     
     elif pretrained_own is not None:
-        model = EfficientNet.from_name('efficientnet-b2', in_channels = 1, num_classes = 1)
+        model = EfficientNet.from_name('efficientnet-b2', in_channels = 1, num_classes = num_classes)
         checkpoint = torch.load(pretrained_own)
         print()
         print("Inside pretrained_own")
@@ -49,7 +48,7 @@ def train(mean, std, fold, training_data_path, gt, device, epochs, train_bs, val
     
     else:
         print("Using NOT pretrained model")
-        model = EfficientNet.from_name('efficientnet-b2', in_channels = 1, num_classes = 1)
+        model = EfficientNet.from_name('efficientnet-b2', in_channels = 1, num_classes = num_classes)
     
     model.to(device)
 
@@ -101,7 +100,13 @@ def train(mean, std, fold, training_data_path, gt, device, epochs, train_bs, val
     )
 
     # Set loss function
-    loss_function = nn.BCEWithLogitsLoss()
+    if num_classes == 1:
+        print("Use BCEWithLogitsLoss")
+        loss_function = nn.BCEWithLogitsLoss()
+    else:
+        print("Use CrossEntropyLoss")
+        loss_function = nn.CrossEntropyLoss()
+
 
     # Set optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -115,32 +120,60 @@ def train(mean, std, fold, training_data_path, gt, device, epochs, train_bs, val
     )
 
     train_loss_all = []
-    accuracy_list = []
     val_loss_list = []
+    accuracy_list = []
+    f1_score_list = []
+    auc_list = []
+
     # Start training
     for epoch in range(epochs):
 
-        train_loss = training_loop(model, device, train_loader, optimizer, loss_function, epoch, epochs)
+        train_loss = training_loop(model, num_classes, device, train_loader, optimizer, loss_function, epoch, epochs)
 
-        targets, predictions, accuracy, val_loss = val_loop(model, device, val_loader, loss_function)
+        targets, predictions, accuracy, val_loss = val_loop(model, num_classes, device, val_loader, loss_function)
 
         assert np.array_equal(targets, val_targets), "targets from val_loop are not equal to val_targets (source of the validation data)"
 
-        predictions = np.vstack((predictions)).ravel()
+        if num_classes == 1:
+            predictions = np.vstack((predictions)).ravel()
 
-        auc = metrics.roc_auc_score(targets, predictions)
+        if num_classes == 1:
+            f1_score = metrics.f1_score(targets, predictions)
+            auc = metrics.roc_auc_score(targets, predictions)
+        else:
+            f1_score = metrics.f1_score(targets, predictions, average='micro')
+            #auc = metrics.roc_auc_score(targets, predictions, multi_class ="ovr")
+            auc = "needs to be debugged"
 
-        print(f"Epoch = {epoch+1}, AUC = {auc}")
+        print(f"Epoch = {epoch+1}, AUC = {auc}, F1_Score = {f1_score}")
     
-        scheduler.step(auc)
-    
-        if all(accuracy > i for i in accuracy_list):
-            torch.save(model.state_dict(), os.path.join(outdir, f"model_fold_{fold}.bin"))
-            print("Better model saved to outdir")
+        # Learning rate scheduler improves according to chosen metric
+        if metric == "auc":
+            scheduler.step(auc)
+        
+            if all(auc > i for i in auc_list):
+                torch.save(model.state_dict(), os.path.join(outdir, f"model_fold_{fold}.bin"))
+                print("Model with improved auc saved to outdir")
+
+        elif metric == "f1_score":
+            scheduler.step(f1_score)
+        
+            if all(f1_score > i for i in f1_score_list):
+                torch.save(model.state_dict(), os.path.join(outdir, f"model_fold_{fold}.bin"))
+                print("Model with improved f1_score saved to outdir")
+
+        elif metric == "accuracy":
+            scheduler.step(accuracy)
+        
+            if all(accuracy > i for i in accuracy_list):
+                torch.save(model.state_dict(), os.path.join(outdir, f"model_fold_{fold}.bin"))
+                print("Model with improved accuracy saved to outdir")
 
         train_loss_all.append(train_loss)
         val_loss_list.append(val_loss)
         accuracy_list.append(accuracy)
+        f1_score_list.append(f1_score)
+        auc_list.append(auc)
 
 
     # Make a function for the following lines
@@ -158,11 +191,17 @@ def train(mean, std, fold, training_data_path, gt, device, epochs, train_bs, val
     plt.ylabel("Validation Loss")
     val_loss_plot.savefig(os.path.join(opt.outdir, f'validation_loss_fold{opt.fold}.png'))
 
-    accuracy_loss_plot = plt.figure()
+    accuracy_plot = plt.figure()
     plt.plot(accuracy_list)
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy")
-    accuracy_loss_plot.savefig(os.path.join(opt.outdir, f'accuracy_fold{opt.fold}.png'))
+    accuracy_plot.savefig(os.path.join(opt.outdir, f'accuracy_fold{opt.fold}.png'))
+
+    f1_score_plot = plt.figure()
+    plt.plot(f1_score_list)
+    plt.xlabel("Epoch")
+    plt.ylabel("F1_score (multiclass: average='micro')")
+    f1_score_plot.savefig(os.path.join(opt.outdir, f'f1_scores_fold{opt.fold}.png'))
 
     print("plots saved..")
 
@@ -182,9 +221,11 @@ if __name__ == "__main__" :
     parser.add_argument("--train_batch", type=int, default=64, help="batch size for training")
     parser.add_argument("--val_batch", type=int, default=64, help="batch size for validation")
     parser.add_argument("--lr", type=int, default=1e-3)
-    # Needed inputs:
-    parser.add_argument("--pretrained_on_ImageNet", default=False, action='store_true', help="Use a pretrained model")
     parser.add_argument("--pretrained_own", type=str, help="path to a pretrained model (.bin)")
+    parser.add_argument("--metric", type=str, default="f1_score", help="The metric on which to save improved models - (f1_score,auc, precision)")
+    # Needed inputs:
+    parser.add_argument("--num_classes", type=int, default=1, help="number of classes")
+    parser.add_argument("--pretrained_on_ImageNet", default=False, action='store_true', help="Use a pretrained model")
     parser.add_argument("--fold", type=int, help="which fold is the val fold")
     parser.add_argument("--dataset", type=str, help="path to the folder containing the images")
     parser.add_argument("--gt", type=str, help="path to the file that contains the gt csv file - see examples under /examples (needs to be added)")
@@ -208,4 +249,4 @@ if __name__ == "__main__" :
 
     mean, std = get_mean_std(opt.dataset)
 
-    train(mean, std, opt.fold, opt.dataset, opt.gt, opt.device, opt.epochs, opt.train_batch, opt.val_batch, opt.outdir, opt.lr, opt.pretrained_on_ImageNet, opt.pretrained_own)
+    train(mean, std, opt.fold, opt.dataset, opt.gt, opt.num_classes, opt.metric, opt.device, opt.epochs, opt.train_batch, opt.val_batch, opt.outdir, opt.lr, opt.pretrained_on_ImageNet, opt.pretrained_own)
