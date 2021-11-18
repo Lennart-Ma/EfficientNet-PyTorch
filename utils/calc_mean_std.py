@@ -19,6 +19,10 @@ def get_mean_std(path, img_type=None):
     std_sum = 0
     n_imgs = 0
 
+    print("path: ", path)
+
+    print("len: ", len(glob.glob(f"{path}/*")))
+
     for i, image in enumerate(glob.glob(f"{path}/*")):
 
         with Image.open(image).convert('L') as image:
