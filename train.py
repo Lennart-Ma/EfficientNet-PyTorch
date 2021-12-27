@@ -200,7 +200,7 @@ def train(mean, std, fold, training_data_path, gt, num_classes, metric, device, 
     f1_score_plot = plt.figure()
     plt.plot(f1_score_list)
     plt.xlabel("Epoch")
-    plt.ylabel("F1_score (multiclass: average='micro')")
+    plt.ylabel("F1_score")
     f1_score_plot.savefig(os.path.join(opt.outdir, f'f1_scores_fold{opt.fold}.png'))
 
     print("plots saved..")
